@@ -180,7 +180,7 @@
 
     <!-- MODAL POPUP ADMIN -->
     <div id="adminModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 relative">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
             <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
@@ -202,12 +202,61 @@
                 <div class="border-t border-slate-700 pt-3 space-y-2">
                     <label class="block text-xs text-slate-300 font-bold">Injecter un fichier Excel (.xlsx)</label>
                     <p class="text-[11px] text-slate-400">Met à jour les codes PIN et plannings en direct pour TOUS les agents.</p>
-                    <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        <option value="AUTO">Détection Automatique (Ligne 1)</option>
+                    <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white max-h-48 overflow-y-auto">
+                        <option value="AUTO">Détection Automatique (Ligne 1 de l'Excel)</option>
+                        <option value="S01">Force Semaine S01</option>
+                        <option value="S02">Force Semaine S02</option>
+                        <option value="S03">Force Semaine S03</option>
+                        <option value="S04">Force Semaine S04</option>
+                        <option value="S05">Force Semaine S05</option>
+                        <option value="S06">Force Semaine S06</option>
+                        <option value="S07">Force Semaine S07</option>
+                        <option value="S08">Force Semaine S08</option>
+                        <option value="S09">Force Semaine S09</option>
+                        <option value="S10">Force Semaine S10</option>
+                        <option value="S11">Force Semaine S11</option>
+                        <option value="S12">Force Semaine S12</option>
+                        <option value="S13">Force Semaine S13</option>
+                        <option value="S14">Force Semaine S14</option>
+                        <option value="S15">Force Semaine S15</option>
+                        <option value="S16">Force Semaine S16</option>
+                        <option value="S17">Force Semaine S17</option>
+                        <option value="S18">Force Semaine S18</option>
+                        <option value="S19">Force Semaine S19</option>
+                        <option value="S20">Force Semaine S20</option>
+                        <option value="S21">Force Semaine S21</option>
+                        <option value="S22">Force Semaine S22</option>
+                        <option value="S23">Force Semaine S23</option>
+                        <option value="S24">Force Semaine S24</option>
+                        <option value="S25">Force Semaine S25</option>
+                        <option value="S26">Force Semaine S26</option>
+                        <option value="S27">Force Semaine S27</option>
+                        <option value="S28">Force Semaine S28</option>
+                        <option value="S29">Force Semaine S29</option>
+                        <option value="S30">Force Semaine S30</option>
+                        <option value="S31">Force Semaine S31</option>
+                        <option value="S32">Force Semaine S32</option>
+                        <option value="S33">Force Semaine S33</option>
+                        <option value="S34">Force Semaine S34</option>
+                        <option value="S35">Force Semaine S35</option>
+                        <option value="S36">Force Semaine S36</option>
+                        <option value="S37">Force Semaine S37</option>
+                        <option value="S38">Force Semaine S38</option>
                         <option value="S39">Force Semaine S39</option>
                         <option value="S40">Force Semaine S40</option>
                         <option value="S41">Force Semaine S41</option>
                         <option value="S42">Force Semaine S42</option>
+                        <option value="S43">Force Semaine S43</option>
+                        <option value="S44">Force Semaine S44</option>
+                        <option value="S45">Force Semaine S45</option>
+                        <option value="S46">Force Semaine S46</option>
+                        <option value="S47">Force Semaine S47</option>
+                        <option value="S48">Force Semaine S48</option>
+                        <option value="S49">Force Semaine S49</option>
+                        <option value="S50">Force Semaine S50</option>
+                        <option value="S51">Force Semaine S51</option>
+                        <option value="S52">Force Semaine S52</option>
+                        <option value="S53">Force Semaine S53</option>
                     </select>
                     <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 border border-slate-700 rounded-xl bg-slate-900 p-1">
                     <button onclick="importerExcelManager()" id="importBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-xl text-xs">Injecter Fichier Excel</button>
@@ -497,14 +546,20 @@
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
 
                     if (weekTarget === 'AUTO') {
-                        const cellE1 = jsonRows[0] ? jsonRows[0][4] : null;
-                        if (cellE1) {
-                            let strE1 = String(cellE1);
-                            let match = strE1.match(/S\d+/i);
-                            weekTarget = match ? match[0].toUpperCase() : 'S40';
-                        } else {
-                            weekTarget = 'S40';
+                        // Look at header cells in line 1 to auto-detect week tag (e.g. S01, S12, S40...)
+                        let detected = null;
+                        for (let col = 0; col < (jsonRows[0] ? jsonRows[0].length : 0); col++) {
+                            const val = jsonRows[0][col];
+                            if (val) {
+                                let match = String(val).match(/S\d+/i);
+                                if (match) {
+                                    let num = parseInt(match[0].replace(/S/i, ''), 10);
+                                    detected = 'S' + String(num).padStart(2, '0');
+                                    break;
+                                }
+                            }
                         }
+                        weekTarget = detected || 'S40';
                     }
 
                     let batchUpdates = [];
@@ -572,7 +627,7 @@
                     if (error) {
                         alert("Erreur de sauvegarde Cloud : " + error.message);
                     } else {
-                        alert(`Succès : ${batchUpdates.length} agents et leurs NOUVEAUX CODES ont été synchronisés pour la semaine ${weekTarget} !`);
+                        alert(`Succès : ${batchUpdates.length} agents et leurs CODES ont été synchronisés pour la semaine ${weekTarget} !`);
                         await chargerDataSupabase();
                         updateAdminWeekSelector();
                         toggleAdminModal();
