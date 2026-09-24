@@ -29,7 +29,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg text-white">Portail Planning BFB</h1>
-                <p class="text-xs text-slate-400">Consultation Individuelle & Administration (En direct)</p>
+                <p class="text-xs text-slate-400">Consultation Individuelle & Administration (En direct Cloud)</p>
             </div>
         </div>
         
@@ -63,7 +63,7 @@
             <form onsubmit="connexionAgent(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1.5">Code Unique / PIN Agent</label>
-                    <input type="text" id="codeInput" placeholder="Ex: 4688, 6709, 3954..." required
+                    <input type="text" id="codeInput" placeholder="Ex: 1601, 6997, 2801..." required
                         class="w-full bg-slate-900 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-3 text-base text-white placeholder-slate-500 focus:outline-none font-mono text-center tracking-widest transition-all">
                 </div>
 
@@ -96,7 +96,7 @@
                 </button>
             </div>
 
-            <!-- Cartes 2 Semaines -->
+            <!-- Cartes Semaines -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
                     <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex justify-between items-center">
@@ -201,7 +201,7 @@
 
                 <div class="border-t border-slate-700 pt-3 space-y-2">
                     <label class="block text-xs text-slate-300 font-bold">Injecter un fichier Excel (.xlsx)</label>
-                    <p class="text-[11px] text-slate-400">Met à jour la base Cloud en direct pour TOUS les agents.</p>
+                    <p class="text-[11px] text-slate-400">Met à jour les codes PIN et plannings en direct pour TOUS les agents.</p>
                     <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                         <option value="AUTO">Détection Automatique (Ligne 1)</option>
                         <option value="S39">Force Semaine S39</option>
@@ -218,7 +218,7 @@
 
     <!-- SCRIPT DU SYSTÈME SUPABASE CLOUD -->
     <script>
-        // VOS DUX IDENTIFIANTS SUPABASE INTÉGRÉS :
+        // CONFIGURATION SUPABASE INTÉGRÉE
         const SUPABASE_URL = "https://mmmbezoycpnshqlkmrzu.supabase.co";
         const SUPABASE_KEY = "sb_publishable_r-eONzsBh3HrXgckfG6SbQ_d_tlbVAg";
         const dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -274,7 +274,7 @@
                     DB_AGENTS = {};
                     data.forEach(item => {
                         DB_AGENTS[item.name] = {
-                            code: item.code,
+                            code: String(item.code || ''),
                             id: item.id,
                             team: item.team,
                             name: item.name,
@@ -312,7 +312,7 @@
             });
         }
 
-        // CONNEXION AGENT
+        // CONNEXION AGENT (D'ABORD PAR CODE UNIQUE, PUIS FALLBACK MATRICULE/NOM)
         async function connexionAgent(e) {
             e.preventDefault();
             const inputVal = document.getElementById('codeInput').value.trim().toUpperCase();
@@ -323,7 +323,7 @@
             let found = null;
             for (let name in DB_AGENTS) {
                 const ag = DB_AGENTS[name];
-                if ((ag.code && ag.code.toUpperCase() === inputVal) || (ag.id && ag.id.toUpperCase() === inputVal) || name.toUpperCase().includes(inputVal)) {
+                if ((ag.code && ag.code.trim().toUpperCase() === inputVal) || (ag.id && ag.id.trim().toUpperCase() === inputVal) || name.toUpperCase().includes(inputVal)) {
                     found = ag;
                     break;
                 }
@@ -477,7 +477,7 @@
             }
         }
 
-        // IMPORTATION EXCEL AVEC ENREGISTREMENT EN DIRECT DANS SUPABASE
+        // IMPORTATION EXCEL CORRIGÉE (FORCE LA MISE À JOUR DU NOUVEAU CODE DANS SUPABASE)
         async function importerExcelManager() {
             const fileInput = document.getElementById('excelFileInput');
             let weekTarget = document.getElementById('excelWeekTarget').value;
@@ -497,10 +497,10 @@
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
 
                     if (weekTarget === 'AUTO') {
-                        const cellD1 = jsonRows[0] ? jsonRows[0][3] : null;
-                        if (cellD1) {
-                            let strD1 = String(cellD1);
-                            let match = strD1.match(/S\d+/i);
+                        const cellE1 = jsonRows[0] ? jsonRows[0][4] : null;
+                        if (cellE1) {
+                            let strE1 = String(cellE1);
+                            let match = strE1.match(/S\d+/i);
                             weekTarget = match ? match[0].toUpperCase() : 'S40';
                         } else {
                             weekTarget = 'S40';
@@ -514,24 +514,31 @@
                         if (!row) continue;
 
                         let code = '', id = '', team = '', name = '', colStartDays = 4;
-                        const val3 = row[3] ? String(row[3]).trim() : '';
 
-                        if (val3 !== '' && !val3.includes(':')) {
+                        // Structure : Col 0 = Code, Col 1 = Matricule, Col 2 = Team, Col 3 = Nom
+                        if (row[3] && String(row[3]).trim() !== '' && String(row[3]).trim() !== 'Nom et prénom') {
                             code = row[0] ? String(row[0]).trim() : '';
                             id = row[1] ? String(row[1]).trim() : '';
                             team = row[2] ? String(row[2]).trim() : '';
-                            name = val3;
+                            name = String(row[3]).trim();
                             colStartDays = 4;
-                        } else {
+                        } else if (row[2] && String(row[2]).trim() !== '') {
+                            // Structure sans code : Col 0 = Matricule, Col 1 = Team, Col 2 = Nom
                             id = row[0] ? String(row[0]).trim() : '';
                             team = row[1] ? String(row[1]).trim() : '';
-                            name = row[2] ? String(row[2]).trim() : '';
+                            name = String(row[2]).trim();
                             colStartDays = 3;
+                        } else {
+                            continue;
                         }
 
                         if (!name || name === "Nom et prénom") continue;
 
                         let currentData = DB_AGENTS[name] ? { ...DB_AGENTS[name] } : { code: code, id: id, team: team, name: name };
+
+                        if (code) {
+                            currentData.code = code;
+                        }
 
                         const weekDays = {};
                         DAYS_KEYS.forEach((dayName, idx) => {
@@ -552,19 +559,21 @@
 
                         batchUpdates.push({
                             name: name,
-                            code: currentData.code || code,
+                            code: String(currentData.code || code),
                             id: currentData.id || id,
                             team: currentData.team || team,
                             data: weeksOnly
                         });
                     }
 
-                    const { error } = await dbClient.from('plannings').upsert(batchUpdates);
+                    // Envoi vers Supabase
+                    const { error } = await dbClient.from('plannings').upsert(batchUpdates, { onConflict: 'name' });
 
                     if (error) {
                         alert("Erreur de sauvegarde Cloud : " + error.message);
                     } else {
-                        alert(`Succès : Fichier importé pour la semaine ${weekTarget} (${batchUpdates.length} agents mis à jour EN DIRECT pour tout le monde) !`);
+                        alert(`Succès : ${batchUpdates.length} agents et leurs NOUVEAUX CODES ont été synchronisés pour la semaine ${weekTarget} !`);
+                        await chargerDataSupabase();
                         updateAdminWeekSelector();
                         toggleAdminModal();
                     }
