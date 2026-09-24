@@ -96,22 +96,44 @@
                 </button>
             </div>
 
-            <!-- Cartes Semaines -->
+            <!-- Cartes Semaines avec Sélection -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- VUE SEMAINE 1 -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex justify-between items-center">
-                        <h3 id="titleWeek1" class="font-bold text-sm text-white flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i> Semaine S39
-                        </h3>
+                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex flex-wrap justify-between items-center gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                            <select id="agentWeekSelect1" onchange="changerSemaineAgent()" class="bg-slate-900 border border-slate-700 text-white font-bold text-sm rounded-lg px-2.5 py-1 focus:outline-none">
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="naviguerSemaine(1, -1)" class="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-xs" title="Semaine précédente">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="naviguerSemaine(1, 1)" class="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-xs" title="Semaine suivante">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
                     <div id="gridWeek1" class="divide-y divide-slate-700/50"></div>
                 </div>
 
+                <!-- VUE SEMAINE 2 -->
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex justify-between items-center">
-                        <h3 id="titleWeek2" class="font-bold text-sm text-white flex items-center gap-2">
-                            <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Semaine S40
-                        </h3>
+                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex flex-wrap justify-between items-center gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i>
+                            <select id="agentWeekSelect2" onchange="changerSemaineAgent()" class="bg-slate-900 border border-slate-700 text-white font-bold text-sm rounded-lg px-2.5 py-1 focus:outline-none">
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="naviguerSemaine(2, -1)" class="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-xs" title="Semaine précédente">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="naviguerSemaine(2, 1)" class="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-xs" title="Semaine suivante">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
                     <div id="gridWeek2" class="divide-y divide-slate-700/50"></div>
                 </div>
@@ -193,73 +215,47 @@
                 <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm">Se connecter</button>
             </div>
 
-            <div id="adminPanel" class="hidden space-y-4">
+            <div id="adminPanel" class="hidden space-y-6">
                 <button onclick="ouvrirVueAdminGlobal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
                     <i data-lucide="users" class="w-4 h-4"></i>
                     <span>Consulter le Tableau Général</span>
                 </button>
 
-                <div class="border-t border-slate-700 pt-3 space-y-2">
-                    <label class="block text-xs text-slate-300 font-bold">Injecter un fichier Excel (.xlsx)</label>
-                    <p class="text-[11px] text-slate-400">Met à jour les codes PIN et plannings en direct pour TOUS les agents.</p>
-                    <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white max-h-48 overflow-y-auto">
-                        <option value="AUTO">Détection Automatique (Ligne 1 de l'Excel)</option>
-                        <option value="S01">Force Semaine S01</option>
-                        <option value="S02">Force Semaine S02</option>
-                        <option value="S03">Force Semaine S03</option>
-                        <option value="S04">Force Semaine S04</option>
-                        <option value="S05">Force Semaine S05</option>
-                        <option value="S06">Force Semaine S06</option>
-                        <option value="S07">Force Semaine S07</option>
-                        <option value="S08">Force Semaine S08</option>
-                        <option value="S09">Force Semaine S09</option>
-                        <option value="S10">Force Semaine S10</option>
-                        <option value="S11">Force Semaine S11</option>
-                        <option value="S12">Force Semaine S12</option>
-                        <option value="S13">Force Semaine S13</option>
-                        <option value="S14">Force Semaine S14</option>
-                        <option value="S15">Force Semaine S15</option>
-                        <option value="S16">Force Semaine S16</option>
-                        <option value="S17">Force Semaine S17</option>
-                        <option value="S18">Force Semaine S18</option>
-                        <option value="S19">Force Semaine S19</option>
-                        <option value="S20">Force Semaine S20</option>
-                        <option value="S21">Force Semaine S21</option>
-                        <option value="S22">Force Semaine S22</option>
-                        <option value="S23">Force Semaine S23</option>
-                        <option value="S24">Force Semaine S24</option>
-                        <option value="S25">Force Semaine S25</option>
-                        <option value="S26">Force Semaine S26</option>
-                        <option value="S27">Force Semaine S27</option>
-                        <option value="S28">Force Semaine S28</option>
-                        <option value="S29">Force Semaine S29</option>
-                        <option value="S30">Force Semaine S30</option>
-                        <option value="S31">Force Semaine S31</option>
-                        <option value="S32">Force Semaine S32</option>
-                        <option value="S33">Force Semaine S33</option>
-                        <option value="S34">Force Semaine S34</option>
-                        <option value="S35">Force Semaine S35</option>
-                        <option value="S36">Force Semaine S36</option>
-                        <option value="S37">Force Semaine S37</option>
-                        <option value="S38">Force Semaine S38</option>
-                        <option value="S39">Force Semaine S39</option>
-                        <option value="S40">Force Semaine S40</option>
-                        <option value="S41">Force Semaine S41</option>
-                        <option value="S42">Force Semaine S42</option>
-                        <option value="S43">Force Semaine S43</option>
-                        <option value="S44">Force Semaine S44</option>
-                        <option value="S45">Force Semaine S45</option>
-                        <option value="S46">Force Semaine S46</option>
-                        <option value="S47">Force Semaine S47</option>
-                        <option value="S48">Force Semaine S48</option>
-                        <option value="S49">Force Semaine S49</option>
-                        <option value="S50">Force Semaine S50</option>
-                        <option value="S51">Force Semaine S51</option>
-                        <option value="S52">Force Semaine S52</option>
-                        <option value="S53">Force Semaine S53</option>
+                <!-- SECTION INJECTION EXCEL -->
+                <div class="border-t border-slate-700 pt-4 space-y-2">
+                    <label class="block text-xs text-slate-300 font-bold">1. Injecter un fichier Excel (.xlsx)</label>
+                    <p class="text-[11px] text-slate-400">Sélectionnez la semaine cible (S01 à S53) ou détection automatique.</p>
+                    <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <option value="AUTO">Détection Automatique (Ligne 1)</option>
                     </select>
                     <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 border border-slate-700 rounded-xl bg-slate-900 p-1">
                     <button onclick="importerExcelManager()" id="importBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-xl text-xs">Injecter Fichier Excel</button>
+                </div>
+
+                <!-- SECTION SUPPRESSION ET NETTOYAGE -->
+                <div class="border-t border-slate-700 pt-4 space-y-3">
+                    <label class="block text-xs text-rose-400 font-bold flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>2. Gestion & Suppression des Plannings</span>
+                    </label>
+
+                    <!-- Suppression d'une semaine spécifique -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                        <label class="block text-[11px] text-slate-300">Supprimer une semaine spécifique (pour tous les agents) :</label>
+                        <div class="flex gap-2">
+                            <select id="deleteWeekTarget" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                            </select>
+                            <button onclick="supprimerSemaineSpecific()" class="bg-rose-600/80 hover:bg-rose-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-all">
+                                Supprimer Semaine
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Purge totale -->
+                    <button onclick="purgerTouteLaBase()" class="w-full bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400"></i>
+                        <span>Supprimer TOUS les plannings (Réinitialiser la base)</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -274,6 +270,19 @@
 
         const DAYS_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
         let DB_AGENTS = {};
+        let currentConnectedAgent = null;
+
+        // Génération des 53 options pour l'injection
+        function initWeekSelectors() {
+            const selectInject = document.getElementById('excelWeekTarget');
+            for (let i = 1; i <= 53; i++) {
+                let sNum = 'S' + String(i).padStart(2, '0');
+                let opt = document.createElement('option');
+                opt.value = sNum;
+                opt.textContent = 'Force Semaine ' + sNum;
+                selectInject.appendChild(opt);
+            }
+        }
 
         // PARSEUR D'HEURES
         function cleanExcelTime(val) {
@@ -311,8 +320,10 @@
 
         window.onload = async function() {
             lucide.createIcons();
+            initWeekSelectors();
             await chargerDataSupabase();
             updateAdminWeekSelector();
+            updateDeleteWeekSelector();
         };
 
         // CHARGEMENT DE LA BASE EN DIRECT DEPUIS SUPABASE
@@ -361,12 +372,71 @@
             });
         }
 
-        // CONNEXION AGENT (D'ABORD PAR CODE UNIQUE, PUIS FALLBACK MATRICULE/NOM)
+        function updateDeleteWeekSelector() {
+            const select = document.getElementById('deleteWeekTarget');
+            select.innerHTML = '';
+            const weeks = getAllWeeksInDB();
+            weeks.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.textContent = 'Supprimer Semaine ' + w;
+                select.appendChild(opt);
+            });
+        }
+
+        // REMPLIR LES SÉLECTEURS DE SEMAINE DE L'AGENT
+        function populateAgentWeekSelectors(selectedW1, selectedW2) {
+            const sel1 = document.getElementById('agentWeekSelect1');
+            const sel2 = document.getElementById('agentWeekSelect2');
+            sel1.innerHTML = '';
+            sel2.innerHTML = '';
+
+            const weeks = getAllWeeksInDB();
+
+            weeks.forEach(w => {
+                let opt1 = document.createElement('option');
+                opt1.value = w;
+                opt1.textContent = 'Semaine ' + w;
+                if (w === selectedW1) opt1.selected = true;
+                sel1.appendChild(opt1);
+
+                let opt2 = document.createElement('option');
+                opt2.value = w;
+                opt2.textContent = 'Semaine ' + w;
+                if (w === selectedW2) opt2.selected = true;
+                sel2.appendChild(opt2);
+            });
+        }
+
+        function changerSemaineAgent() {
+            if (!currentConnectedAgent) return;
+            const w1 = document.getElementById('agentWeekSelect1').value;
+            const w2 = document.getElementById('agentWeekSelect2').value;
+
+            renderAgentWeek(currentConnectedAgent[w1], 'gridWeek1');
+            renderAgentWeek(currentConnectedAgent[w2], 'gridWeek2');
+            lucide.createIcons();
+        }
+
+        function naviguerSemaine(blockNum, direction) {
+            const weeks = getAllWeeksInDB();
+            const sel = document.getElementById('agentWeekSelect' + blockNum);
+            const currIdx = weeks.indexOf(sel.value);
+            
+            if (currIdx !== -1) {
+                let newIdx = currIdx + direction;
+                if (newIdx >= 0 && newIdx < weeks.length) {
+                    sel.value = weeks[newIdx];
+                    changerSemaineAgent();
+                }
+            }
+        }
+
+        // CONNEXION AGENT
         async function connexionAgent(e) {
             e.preventDefault();
             const inputVal = document.getElementById('codeInput').value.trim().toUpperCase();
             
-            // Recharger la dernière version en ligne
             await chargerDataSupabase();
 
             let found = null;
@@ -380,6 +450,7 @@
 
             if (found) {
                 document.getElementById('loginError').classList.add('hidden');
+                currentConnectedAgent = found;
                 afficherPlanningAgent(found);
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
@@ -401,11 +472,9 @@
 
             const weeks = getAllWeeksInDB();
             const w1 = weeks[0] || 'S39';
-            const w2 = weeks[1] || 'S40';
+            const w2 = weeks[1] || (weeks[0] || 'S40');
 
-            document.getElementById('titleWeek1').innerHTML = `<i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i> Semaine ${w1}`;
-            document.getElementById('titleWeek2').innerHTML = `<i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Semaine ${w2}`;
-
+            populateAgentWeekSelectors(w1, w2);
             renderAgentWeek(agent[w1], 'gridWeek1');
             renderAgentWeek(agent[w2], 'gridWeek2');
             lucide.createIcons();
@@ -441,6 +510,7 @@
         }
 
         function deconnexion() {
+            currentConnectedAgent = null;
             document.getElementById('codeInput').value = '';
             document.getElementById('loginSection').classList.remove('hidden');
             document.getElementById('planningSection').classList.add('hidden');
@@ -458,6 +528,7 @@
             if (pwd === 'admin' || pwd === 'admin123') {
                 document.getElementById('adminAuth').classList.add('hidden');
                 document.getElementById('adminPanel').classList.remove('hidden');
+                updateDeleteWeekSelector();
             } else {
                 alert('Mot de passe incorrect');
             }
@@ -526,7 +597,7 @@
             }
         }
 
-        // IMPORTATION EXCEL CORRIGÉE (FORCE LA MISE À JOUR DU NOUVEAU CODE DANS SUPABASE)
+        // IMPORTATION EXCEL
         async function importerExcelManager() {
             const fileInput = document.getElementById('excelFileInput');
             let weekTarget = document.getElementById('excelWeekTarget').value;
@@ -546,20 +617,14 @@
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
 
                     if (weekTarget === 'AUTO') {
-                        // Look at header cells in line 1 to auto-detect week tag (e.g. S01, S12, S40...)
-                        let detected = null;
-                        for (let col = 0; col < (jsonRows[0] ? jsonRows[0].length : 0); col++) {
-                            const val = jsonRows[0][col];
-                            if (val) {
-                                let match = String(val).match(/S\d+/i);
-                                if (match) {
-                                    let num = parseInt(match[0].replace(/S/i, ''), 10);
-                                    detected = 'S' + String(num).padStart(2, '0');
-                                    break;
-                                }
-                            }
+                        const cellE1 = jsonRows[0] ? jsonRows[0][4] : (jsonRows[0] ? jsonRows[0][3] : null);
+                        if (cellE1) {
+                            let strE1 = String(cellE1);
+                            let match = strE1.match(/S\d+/i);
+                            weekTarget = match ? match[0].toUpperCase() : 'S40';
+                        } else {
+                            weekTarget = 'S40';
                         }
-                        weekTarget = detected || 'S40';
                     }
 
                     let batchUpdates = [];
@@ -570,7 +635,6 @@
 
                         let code = '', id = '', team = '', name = '', colStartDays = 4;
 
-                        // Structure : Col 0 = Code, Col 1 = Matricule, Col 2 = Team, Col 3 = Nom
                         if (row[3] && String(row[3]).trim() !== '' && String(row[3]).trim() !== 'Nom et prénom') {
                             code = row[0] ? String(row[0]).trim() : '';
                             id = row[1] ? String(row[1]).trim() : '';
@@ -578,7 +642,6 @@
                             name = String(row[3]).trim();
                             colStartDays = 4;
                         } else if (row[2] && String(row[2]).trim() !== '') {
-                            // Structure sans code : Col 0 = Matricule, Col 1 = Team, Col 2 = Nom
                             id = row[0] ? String(row[0]).trim() : '';
                             team = row[1] ? String(row[1]).trim() : '';
                             name = String(row[2]).trim();
@@ -591,9 +654,7 @@
 
                         let currentData = DB_AGENTS[name] ? { ...DB_AGENTS[name] } : { code: code, id: id, team: team, name: name };
 
-                        if (code) {
-                            currentData.code = code;
-                        }
+                        if (code) currentData.code = code;
 
                         const weekDays = {};
                         DAYS_KEYS.forEach((dayName, idx) => {
@@ -621,15 +682,15 @@
                         });
                     }
 
-                    // Envoi vers Supabase
                     const { error } = await dbClient.from('plannings').upsert(batchUpdates, { onConflict: 'name' });
 
                     if (error) {
                         alert("Erreur de sauvegarde Cloud : " + error.message);
                     } else {
-                        alert(`Succès : ${batchUpdates.length} agents et leurs CODES ont été synchronisés pour la semaine ${weekTarget} !`);
+                        alert(`Succès : ${batchUpdates.length} agents et leurs codes ont été synchronisés pour la semaine ${weekTarget} !`);
                         await chargerDataSupabase();
                         updateAdminWeekSelector();
+                        updateDeleteWeekSelector();
                         toggleAdminModal();
                     }
 
@@ -641,6 +702,73 @@
                 }
             };
             reader.readAsArrayBuffer(fileInput.files[0]);
+        }
+
+        // SUPPRESSION D'UNE SEMAINE SPÉCIFIQUE
+        async function supprimerSemaineSpecific() {
+            const targetWeek = document.getElementById('deleteWeekTarget').value;
+            if (!targetWeek) return alert("Aucune semaine sélectionnée.");
+
+            if (!confirm(`Êtes-vous sûr de vouloir SUPPRIMER le planning de la semaine ${targetWeek} pour TOUS les agents ?`)) {
+                return;
+            }
+
+            let batchUpdates = [];
+
+            for (let name in DB_AGENTS) {
+                let ag = { ...DB_AGENTS[name] };
+                if (ag[targetWeek]) {
+                    delete ag[targetWeek];
+
+                    let weeksOnly = {};
+                    for (let k in ag) {
+                        if (k.startsWith('S')) weeksOnly[k] = ag[k];
+                    }
+
+                    batchUpdates.push({
+                        name: name,
+                        code: ag.code,
+                        id: ag.id,
+                        team: ag.team,
+                        data: weeksOnly
+                    });
+                }
+            }
+
+            if (batchUpdates.length === 0) return alert("Aucune donnée trouvée pour cette semaine.");
+
+            const { error } = await dbClient.from('plannings').upsert(batchUpdates, { onConflict: 'name' });
+
+            if (error) {
+                alert("Erreur lors de la suppression : " + error.message);
+            } else {
+                alert(`La semaine ${targetWeek} a été supprimée avec succès pour tous les agents !`);
+                await chargerDataSupabase();
+                updateAdminWeekSelector();
+                updateDeleteWeekSelector();
+            }
+        }
+
+        // PURGE TOTALE DE LA BASE SUPABASE
+        async function purgerTouteLaBase() {
+            const confirmation = prompt("ATTENTION : Cette action supprimera DÉFINITIVEMENT tous les agents et plannings de la base Cloud.\n\nPour confirmer, tapez : SUPPRIMER");
+            
+            if (confirmation !== "SUPPRIMER") {
+                return alert("Annulé. La base de données n'a pas été modifiée.");
+            }
+
+            const { error } = await dbClient.from('plannings').delete().neq('name', '___DUMMY___');
+
+            if (error) {
+                alert("Erreur lors de la purge : " + error.message);
+            } else {
+                alert("La base de données a été réinitialisée avec succès !");
+                DB_AGENTS = {};
+                await chargerDataSupabase();
+                updateAdminWeekSelector();
+                updateDeleteWeekSelector();
+                toggleAdminModal();
+            }
         }
     </script>
 </body>
