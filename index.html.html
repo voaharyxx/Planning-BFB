@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portail Planning BFB</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS pour import Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Supabase Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- EN-TÊTE -->
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center no-print">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-blue-600 rounded-lg text-white">
+                <i data-lucide="calendar"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-white">Portail Planning BFB</h1>
+                <p class="text-xs text-slate-400">Consultation Individuelle & Administration (En direct)</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <span id="agentBadge" class="hidden bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full border border-slate-600 flex items-center gap-2">
+                <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span id="agentBadgeName">Agent connecté</span>
+            </span>
+            <button id="logoutBtn" onclick="deconnexion()" class="hidden bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Déconnexion
+            </button>
+            <button onclick="toggleAdminModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                <i data-lucide="shield"></i> Espace Admin
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENEUR PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- 1. CONNEXION AGENT PAR CODE UNIQUE -->
+        <section id="loginSection" class="max-w-md mx-auto my-12 bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="inline-flex p-3 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-400 mb-3">
+                    <i data-lucide="key-round" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Espace Agent</h2>
+                <p class="text-xs text-slate-400 mt-1">Saisissez votre code unique à 4 chiffres pour accéder à votre planning.</p>
+            </div>
+
+            <form onsubmit="connexionAgent(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Code Unique / PIN Agent</label>
+                    <input type="text" id="codeInput" placeholder="Ex: 4688, 6709, 3954..." required
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-3 text-base text-white placeholder-slate-500 focus:outline-none font-mono text-center tracking-widest transition-all">
+                </div>
+
+                <div id="loginError" class="hidden bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs p-3 rounded-lg flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                    <span>Code unique introuvable. Veuillez vérifier votre saisie.</span>
+                </div>
+
+                <button type="submit" id="loginBtn" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2">
+                    <span>Voir mon planning</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </section>
+
+        <!-- 2. PLANNING INDIVIDUEL AGENT -->
+        <section id="planningSection" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="displayCode" class="font-mono text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded">CODE: ----</span>
+                        <span id="displayMatricule" class="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">CN00000</span>
+                        <span id="displayTeam" class="text-xs font-semibold text-slate-300 bg-slate-700 px-2 py-0.5 rounded">EQUIPE</span>
+                    </div>
+                    <h2 id="displayName" class="text-xl font-bold text-white mt-2">Nom Prénom</h2>
+                </div>
+
+                <button onclick="window.print()" class="no-print bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all border border-slate-600 flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimer mon planning
+                </button>
+            </div>
+
+            <!-- Cartes 2 Semaines -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex justify-between items-center">
+                        <h3 id="titleWeek1" class="font-bold text-sm text-white flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i> Semaine S39
+                        </h3>
+                    </div>
+                    <div id="gridWeek1" class="divide-y divide-slate-700/50"></div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="bg-slate-800/80 border-b border-slate-700 px-5 py-4 flex justify-between items-center">
+                        <h3 id="titleWeek2" class="font-bold text-sm text-white flex items-center gap-2">
+                            <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Semaine S40
+                        </h3>
+                    </div>
+                    <div id="gridWeek2" class="divide-y divide-slate-700/50"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. TABLEAU ADMIN GLOBAL -->
+        <section id="adminGlobalView" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold px-2.5 py-0.5 rounded-full">Super-Admin</span>
+                        <h2 class="text-xl font-bold text-white mt-1">Planning Intégral (<span id="agentCountHeader">0</span> Agents)</h2>
+                    </div>
+                    <button onclick="fermerVueAdminGlobal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-600 flex items-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Quitter la vue Admin
+                    </button>
+                </div>
+
+                <!-- Filtres -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700 mb-6">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Recherche Agent (Code, Matricule, Nom)</label>
+                        <input type="text" id="adminSearchInput" oninput="renderPlanningGlobalTable()" placeholder="Code, nom ou matricule..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Équipe</label>
+                        <select id="adminTeamFilter" onchange="renderPlanningGlobalTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="ALL">Toutes les équipes</option>
+                            <option value="TEL BAQ">TEL BAQ</option>
+                            <option value="CHAT BAQ">CHAT BAQ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Semaine à consulter</label>
+                        <select id="adminWeekSelector" onchange="renderPlanningGlobalTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tableau Récapitulatif -->
+                <div class="overflow-x-auto border border-slate-700 rounded-xl">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/90 text-slate-400 font-semibold uppercase border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Code PIN</th>
+                                <th class="p-3">Matricule</th>
+                                <th class="p-3">Agent</th>
+                                <th class="p-3">Équipe</th>
+                                <th class="p-2 text-center">Lundi</th>
+                                <th class="p-2 text-center">Mardi</th>
+                                <th class="p-2 text-center">Mercredi</th>
+                                <th class="p-2 text-center">Jeudi</th>
+                                <th class="p-2 text-center">Vendredi</th>
+                                <th class="p-2 text-center">Samedi</th>
+                                <th class="p-2 text-center">Dimanche</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalTableBody" class="divide-y divide-slate-700/50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL POPUP ADMIN -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 relative">
+            <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div id="adminAuth">
+                <h3 class="text-lg font-bold text-white mb-2">Espace Administration</h3>
+                <p class="text-xs text-slate-400 mb-4">Veuillez saisir votre mot de passe pour accéder aux fonctionnalités d'administration.</p>
+                
+                <input type="password" id="adminPassword" placeholder="Mot de passe" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white mb-3 font-mono">
+                <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm">Se connecter</button>
+            </div>
+
+            <div id="adminPanel" class="hidden space-y-4">
+                <button onclick="ouvrirVueAdminGlobal()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Consulter le Tableau Général</span>
+                </button>
+
+                <div class="border-t border-slate-700 pt-3 space-y-2">
+                    <label class="block text-xs text-slate-300 font-bold">Injecter un fichier Excel (.xlsx)</label>
+                    <p class="text-[11px] text-slate-400">Met à jour la base Cloud en direct pour TOUS les agents.</p>
+                    <select id="excelWeekTarget" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        <option value="AUTO">Détection Automatique (Ligne 1)</option>
+                        <option value="S39">Force Semaine S39</option>
+                        <option value="S40">Force Semaine S40</option>
+                        <option value="S41">Force Semaine S41</option>
+                        <option value="S42">Force Semaine S42</option>
+                    </select>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 border border-slate-700 rounded-xl bg-slate-900 p-1">
+                    <button onclick="importerExcelManager()" id="importBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-xl text-xs">Injecter Fichier Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DU SYSTÈME SUPABASE CLOUD -->
+    <script>
+        // VOS DUX IDENTIFIANTS SUPABASE INTÉGRÉS :
+        const SUPABASE_URL = "https://mmmbezoycpnshqlkmrzu.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_r-eONzsBh3HrXgckfG6SbQ_d_tlbVAg";
+        const dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const DAYS_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        let DB_AGENTS = {};
+
+        // PARSEUR D'HEURES
+        function cleanExcelTime(val) {
+            if (val === null || val === undefined) return 'Repos';
+
+            if (typeof val === 'number') {
+                if (isNaN(val) || val === 0) return 'Repos';
+                let totalMinutes = Math.round(val * 24 * 60);
+                let hours = Math.floor(totalMinutes / 60) % 24;
+                let mins = totalMinutes % 60;
+                return String(hours).padStart(2, '0') + 'h' + String(mins).padStart(2, '0');
+            }
+
+            let str = String(val).trim();
+            if (!str || str.toLowerCase() === 'repos' || str === 'nan' || str === 'undefined') return 'Repos';
+            if (str.toLowerCase() === 'cp') return 'CP';
+
+            if (str.startsWith('+') || str.includes('GMT') || str.includes('UTC')) return 'Repos';
+
+            if (str.includes(':')) {
+                let parts = str.split(':');
+                if (parts.length >= 2) {
+                    return parts[0].padStart(2, '0') + 'h' + parts[1].padStart(2, '0');
+                }
+            }
+
+            return str;
+        }
+
+        function formatHourDisplay(timeStr) {
+            if (!timeStr || timeStr === 'Repos' || timeStr === 'CP' || timeStr === 'OFF') return timeStr;
+            if (timeStr.includes(':')) return timeStr.replace(':', 'h');
+            return timeStr;
+        }
+
+        window.onload = async function() {
+            lucide.createIcons();
+            await chargerDataSupabase();
+            updateAdminWeekSelector();
+        };
+
+        // CHARGEMENT DE LA BASE EN DIRECT DEPUIS SUPABASE
+        async function chargerDataSupabase() {
+            try {
+                const { data, error } = await dbClient.from('plannings').select('*');
+                if (data) {
+                    DB_AGENTS = {};
+                    data.forEach(item => {
+                        DB_AGENTS[item.name] = {
+                            code: item.code,
+                            id: item.id,
+                            team: item.team,
+                            name: item.name,
+                            ...item.data
+                        };
+                    });
+                }
+            } catch(e) {
+                console.error("Erreur chargement Supabase:", e);
+            }
+        }
+
+        function getAllWeeksInDB() {
+            let weeks = new Set();
+            for (let name in DB_AGENTS) {
+                for (let key in DB_AGENTS[name]) {
+                    if (key.startsWith('S') && Object.keys(DB_AGENTS[name][key]).length > 0) {
+                        weeks.add(key);
+                    }
+                }
+            }
+            let list = Array.from(weeks).sort();
+            return list.length > 0 ? list : ['S39', 'S40'];
+        }
+
+        function updateAdminWeekSelector() {
+            const select = document.getElementById('adminWeekSelector');
+            select.innerHTML = '';
+            const weeks = getAllWeeksInDB();
+            weeks.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.textContent = 'Semaine ' + w;
+                select.appendChild(opt);
+            });
+        }
+
+        // CONNEXION AGENT
+        async function connexionAgent(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('codeInput').value.trim().toUpperCase();
+            
+            // Recharger la dernière version en ligne
+            await chargerDataSupabase();
+
+            let found = null;
+            for (let name in DB_AGENTS) {
+                const ag = DB_AGENTS[name];
+                if ((ag.code && ag.code.toUpperCase() === inputVal) || (ag.id && ag.id.toUpperCase() === inputVal) || name.toUpperCase().includes(inputVal)) {
+                    found = ag;
+                    break;
+                }
+            }
+
+            if (found) {
+                document.getElementById('loginError').classList.add('hidden');
+                afficherPlanningAgent(found);
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function afficherPlanningAgent(agent) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('adminGlobalView').classList.add('hidden');
+            document.getElementById('planningSection').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('agentBadge').classList.remove('hidden');
+
+            document.getElementById('displayCode').textContent = 'CODE: ' + (agent.code || '----');
+            document.getElementById('displayMatricule').textContent = agent.id || 'N/A';
+            document.getElementById('displayTeam').textContent = agent.team || 'TEL BAQ';
+            document.getElementById('displayName').textContent = agent.name;
+            document.getElementById('agentBadgeName').textContent = agent.name.split(' ')[0];
+
+            const weeks = getAllWeeksInDB();
+            const w1 = weeks[0] || 'S39';
+            const w2 = weeks[1] || 'S40';
+
+            document.getElementById('titleWeek1').innerHTML = `<i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i> Semaine ${w1}`;
+            document.getElementById('titleWeek2').innerHTML = `<i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-400"></i> Semaine ${w2}`;
+
+            renderAgentWeek(agent[w1], 'gridWeek1');
+            renderAgentWeek(agent[w2], 'gridWeek2');
+            lucide.createIcons();
+        }
+
+        function renderAgentWeek(weekData, gridId) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+
+            DAYS_KEYS.forEach(dayName => {
+                const dayInfo = weekData ? weekData[dayName] : null;
+                const debRaw = dayInfo ? dayInfo.debut : 'Repos';
+                const finRaw = dayInfo ? dayInfo.fin : 'Repos';
+
+                const deb = formatHourDisplay(debRaw);
+                const fin = formatHourDisplay(finRaw);
+
+                const isRepos = !debRaw || debRaw === 'Repos' || debRaw === '';
+                const isCP = debRaw === 'CP';
+
+                let badgeColor = isRepos ? "bg-slate-700/50 text-slate-400 border-slate-600/30" : isCP ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20";
+
+                const row = document.createElement('div');
+                row.className = "p-4 flex justify-between items-center";
+                row.innerHTML = `
+                    <div class="text-xs font-semibold text-slate-300 capitalize">${dayName}</div>
+                    <span class="text-xs font-bold px-3 py-1 rounded-lg border ${badgeColor}">
+                        ${isRepos ? 'REPOS' : isCP ? 'CONGÉ (CP)' : deb + ' - ' + fin}
+                    </span>
+                `;
+                grid.appendChild(row);
+            });
+        }
+
+        function deconnexion() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('planningSection').classList.add('hidden');
+            document.getElementById('adminGlobalView').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('agentBadge').classList.add('hidden');
+        }
+
+        function toggleAdminModal() {
+            document.getElementById('adminModal').classList.toggle('hidden');
+        }
+
+        function loginAdmin() {
+            const pwd = document.getElementById('adminPassword').value;
+            if (pwd === 'admin' || pwd === 'admin123') {
+                document.getElementById('adminAuth').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+            } else {
+                alert('Mot de passe incorrect');
+            }
+        }
+
+        async function ouvrirVueAdminGlobal() {
+            toggleAdminModal();
+            await chargerDataSupabase();
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('planningSection').classList.add('hidden');
+            document.getElementById('adminGlobalView').classList.remove('hidden');
+            document.getElementById('agentCountHeader').textContent = Object.keys(DB_AGENTS).length;
+            updateAdminWeekSelector();
+            renderPlanningGlobalTable();
+        }
+
+        function fermerVueAdminGlobal() {
+            document.getElementById('adminGlobalView').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+        }
+
+        function renderPlanningGlobalTable() {
+            const tbody = document.getElementById('globalTableBody');
+            const selectedWeek = document.getElementById('adminWeekSelector').value || 'S39';
+            const searchVal = document.getElementById('adminSearchInput').value.toLowerCase();
+            const teamVal = document.getElementById('adminTeamFilter').value;
+
+            tbody.innerHTML = '';
+
+            for (let name in DB_AGENTS) {
+                const ag = DB_AGENTS[name];
+
+                if (searchVal && !name.toLowerCase().includes(searchVal) && (!ag.id || !ag.id.toLowerCase().includes(searchVal)) && (!ag.code || !ag.code.toLowerCase().includes(searchVal))) continue;
+                if (teamVal !== 'ALL' && ag.team !== teamVal) continue;
+
+                const weekData = ag[selectedWeek] || {};
+                let daysCells = '';
+
+                DAYS_KEYS.forEach(dayKey => {
+                    const info = weekData[dayKey];
+                    const debRaw = info ? info.debut : 'Repos';
+                    const finRaw = info ? info.fin : 'Repos';
+
+                    const deb = formatHourDisplay(debRaw);
+                    const fin = formatHourDisplay(finRaw);
+
+                    if (!debRaw || debRaw === 'Repos' || debRaw === '') {
+                        daysCells += `<td class="p-2 text-center text-slate-500 font-mono text-[11px]">OFF</td>`;
+                    } else if (debRaw === 'CP') {
+                        daysCells += `<td class="p-2 text-center text-amber-400 bg-amber-500/10 font-bold font-mono text-[11px] rounded">CP</td>`;
+                    } else {
+                        daysCells += `<td class="p-2 text-center text-blue-400 font-mono text-[10px] font-semibold">${deb}<br/>${fin}</td>`;
+                    }
+                });
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/60";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-purple-400 font-bold">${ag.code || '-'}</td>
+                    <td class="p-3 font-mono text-blue-400 font-bold">${ag.id || '-'}</td>
+                    <td class="p-3 font-semibold text-white">${ag.name}</td>
+                    <td class="p-3"><span class="bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded">${ag.team || 'N/A'}</span></td>
+                    ${daysCells}
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // IMPORTATION EXCEL AVEC ENREGISTREMENT EN DIRECT DANS SUPABASE
+        async function importerExcelManager() {
+            const fileInput = document.getElementById('excelFileInput');
+            let weekTarget = document.getElementById('excelWeekTarget').value;
+            const btn = document.getElementById('importBtn');
+
+            if (!fileInput.files || fileInput.files.length === 0) return alert('Veuillez sélectionner un fichier .xlsx');
+
+            btn.textContent = "Injection Cloud en cours...";
+            btn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: true });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+
+                    if (weekTarget === 'AUTO') {
+                        const cellD1 = jsonRows[0] ? jsonRows[0][3] : null;
+                        if (cellD1) {
+                            let strD1 = String(cellD1);
+                            let match = strD1.match(/S\d+/i);
+                            weekTarget = match ? match[0].toUpperCase() : 'S40';
+                        } else {
+                            weekTarget = 'S40';
+                        }
+                    }
+
+                    let batchUpdates = [];
+
+                    for (let i = 2; i < jsonRows.length; i++) {
+                        const row = jsonRows[i];
+                        if (!row) continue;
+
+                        let code = '', id = '', team = '', name = '', colStartDays = 4;
+                        const val3 = row[3] ? String(row[3]).trim() : '';
+
+                        if (val3 !== '' && !val3.includes(':')) {
+                            code = row[0] ? String(row[0]).trim() : '';
+                            id = row[1] ? String(row[1]).trim() : '';
+                            team = row[2] ? String(row[2]).trim() : '';
+                            name = val3;
+                            colStartDays = 4;
+                        } else {
+                            id = row[0] ? String(row[0]).trim() : '';
+                            team = row[1] ? String(row[1]).trim() : '';
+                            name = row[2] ? String(row[2]).trim() : '';
+                            colStartDays = 3;
+                        }
+
+                        if (!name || name === "Nom et prénom") continue;
+
+                        let currentData = DB_AGENTS[name] ? { ...DB_AGENTS[name] } : { code: code, id: id, team: team, name: name };
+
+                        const weekDays = {};
+                        DAYS_KEYS.forEach((dayName, idx) => {
+                            const colStart = colStartDays + idx * 4;
+                            weekDays[dayName] = {
+                                debut: cleanExcelTime(row[colStart]),
+                                fin: cleanExcelTime(row[colStart+1])
+                            };
+                        });
+
+                        currentData[weekTarget] = weekDays;
+                        DB_AGENTS[name] = currentData;
+
+                        let weeksOnly = {};
+                        for (let k in currentData) {
+                            if (k.startsWith('S')) weeksOnly[k] = currentData[k];
+                        }
+
+                        batchUpdates.push({
+                            name: name,
+                            code: currentData.code || code,
+                            id: currentData.id || id,
+                            team: currentData.team || team,
+                            data: weeksOnly
+                        });
+                    }
+
+                    const { error } = await dbClient.from('plannings').upsert(batchUpdates);
+
+                    if (error) {
+                        alert("Erreur de sauvegarde Cloud : " + error.message);
+                    } else {
+                        alert(`Succès : Fichier importé pour la semaine ${weekTarget} (${batchUpdates.length} agents mis à jour EN DIRECT pour tout le monde) !`);
+                        updateAdminWeekSelector();
+                        toggleAdminModal();
+                    }
+
+                } catch(err) {
+                    alert('Erreur lors du traitement du fichier Excel : ' + err.message);
+                } finally {
+                    btn.textContent = "Injecter Fichier Excel";
+                    btn.disabled = false;
+                }
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        }
+    </script>
+</body>
+</html>
