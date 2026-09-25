@@ -6,7 +6,7 @@
     <title>Portail Planning BFB</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS pour import Excel -->
+    <!-- SheetJS pour import/export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Supabase Client SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -232,11 +232,27 @@
                     <button onclick="importerExcelManager()" id="importBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-xl text-xs">Injecter Fichier Excel</button>
                 </div>
 
+                <!-- SECTION EXPORTATION EXCEL (NOUVEAU) -->
+                <div class="border-t border-slate-700 pt-4 space-y-2">
+                    <label class="block text-xs text-blue-400 font-bold flex items-center gap-1">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>2. Exporter le Planning au Format Injectable (.xlsx)</span>
+                    </label>
+                    <p class="text-[11px] text-slate-400">Génère un fichier Excel prêt à être réinjecté ultérieurement.</p>
+                    <div class="flex gap-2">
+                        <select id="exportWeekTarget" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                        </select>
+                        <button onclick="exporterExcelManager()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Exporter .xlsx
+                        </button>
+                    </div>
+                </div>
+
                 <!-- SECTION SUPPRESSION ET NETTOYAGE -->
                 <div class="border-t border-slate-700 pt-4 space-y-3">
                     <label class="block text-xs text-rose-400 font-bold flex items-center gap-1">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        <span>2. Gestion & Suppression des Plannings</span>
+                        <span>3. Gestion & Suppression des Plannings</span>
                     </label>
 
                     <!-- Suppression d'une semaine spécifique -->
@@ -324,6 +340,7 @@
             await chargerDataSupabase();
             updateAdminWeekSelector();
             updateDeleteWeekSelector();
+            updateExportWeekSelector();
         };
 
         // CHARGEMENT DE LA BASE EN DIRECT DEPUIS SUPABASE
@@ -380,6 +397,18 @@
                 const opt = document.createElement('option');
                 opt.value = w;
                 opt.textContent = 'Supprimer Semaine ' + w;
+                select.appendChild(opt);
+            });
+        }
+
+        function updateExportWeekSelector() {
+            const select = document.getElementById('exportWeekTarget');
+            select.innerHTML = '';
+            const weeks = getAllWeeksInDB();
+            weeks.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.textContent = 'Exporter Semaine ' + w;
                 select.appendChild(opt);
             });
         }
@@ -529,6 +558,7 @@
                 document.getElementById('adminAuth').classList.add('hidden');
                 document.getElementById('adminPanel').classList.remove('hidden');
                 updateDeleteWeekSelector();
+                updateExportWeekSelector();
             } else {
                 alert('Mot de passe incorrect');
             }
@@ -691,6 +721,7 @@
                         await chargerDataSupabase();
                         updateAdminWeekSelector();
                         updateDeleteWeekSelector();
+                        updateExportWeekSelector();
                         toggleAdminModal();
                     }
 
@@ -702,6 +733,67 @@
                 }
             };
             reader.readAsArrayBuffer(fileInput.files[0]);
+        }
+
+        // EXPORTATION EXCEL AU FORMAT EXACT INJECTABLE
+        function exporterExcelManager() {
+            const targetWeek = document.getElementById('exportWeekTarget').value;
+            if (!targetWeek) return alert("Aucune semaine disponible à exporter.");
+
+            const rows = [];
+
+            // Ligne 1 : En-tête de la semaine
+            const headerLine1 = [null, null, null, null, `Planning ${targetWeek} BFB`];
+            rows.push(headerLine1);
+
+            // Ligne 2 : Titres des colonnes au format exact d'injection
+            const headerLine2 = [
+                'Code unique', 'Matricule', 'Équipe', 'Nom et prénom',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'Début', 'Fin', 'Pause', 'Durée',
+                'repos', 'Heure semaine'
+            ];
+            rows.push(headerLine2);
+
+            // Remplissage des données des agents
+            for (let name in DB_AGENTS) {
+                const ag = DB_AGENTS[name];
+                const weekData = ag[targetWeek] || {};
+
+                const rowData = [
+                    ag.code || '',
+                    ag.id || '',
+                    ag.team || '',
+                    ag.name || ''
+                ];
+
+                DAYS_KEYS.forEach(dayKey => {
+                    const dayInfo = weekData[dayKey] || {};
+                    const deb = dayInfo.debut || 'Repos';
+                    const fin = dayInfo.fin || 'Repos';
+
+                    rowData.push(deb === 'Repos' ? 'Repos' : deb);
+                    rowData.push(fin === 'Repos' ? 'Repos' : fin);
+                    rowData.push(null); // Pause
+                    rowData.push(null); // Durée
+                });
+
+                rows.push(rowData);
+            }
+
+            // Création du fichier Excel via SheetJS
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, targetWeek);
+
+            // Téléchargement du fichier .xlsx
+            const fileName = `Planning_${targetWeek}_BFB_Export.xlsx`;
+            XLSX.writeFile(workbook, fileName);
         }
 
         // SUPPRESSION D'UNE SEMAINE SPÉCIFIQUE
@@ -746,6 +838,7 @@
                 await chargerDataSupabase();
                 updateAdminWeekSelector();
                 updateDeleteWeekSelector();
+                updateExportWeekSelector();
             }
         }
 
@@ -767,6 +860,7 @@
                 await chargerDataSupabase();
                 updateAdminWeekSelector();
                 updateDeleteWeekSelector();
+                updateExportWeekSelector();
                 toggleAdminModal();
             }
         }
